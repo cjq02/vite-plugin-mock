@@ -25,6 +25,7 @@ export async function createMockServer(
   opt: ViteMockOptions = { mockPath: 'mock', configPath: 'vite.mock.config' },
 ) {
   opt = {
+    baseApi: '',
     mockPath: 'mock',
     watchFiles: true,
     supportTs: true,
@@ -48,9 +49,11 @@ export async function requestMiddleware(opt: ViteMockOptions) {
       }
       pathname?: string | null
     } = {}
+    const baseUrl = (req.url || '').replace((opt.baseApi || ''), '')
+    /*console.log('baseUrl', baseUrl)*/
 
-    if (req.url) {
-      queryParams = url.parse(req.url, true)
+    if (baseUrl) {
+      queryParams = url.parse(baseUrl, true)
     }
 
     const reqUrl = queryParams.pathname

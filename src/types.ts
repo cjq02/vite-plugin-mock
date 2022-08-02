@@ -1,6 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http'
 
 export interface ViteMockOptions {
+  baseApi?: string
   mockPath?: string
   configPath?: string
   ignore?: RegExp | ((fileName: string) => boolean)

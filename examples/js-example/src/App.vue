@@ -51,7 +51,7 @@ export default defineComponent({
 
     const getRoleById = () => {
       requestLists.value[0].show = true
-      axios.get('/api/getRoleById', { params: { id: 1 } }).then(({ data }) => {
+      axios.get('/dev/api/getRoleById', { params: { id: 1 } }).then(({ data }) => {
         requestLists.value[0].info = data
         requestLists.value[0].show = false
       })

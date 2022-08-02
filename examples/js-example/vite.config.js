@@ -9,6 +9,7 @@ export default ({ command }) => {
       vue(),
       viteMockServe({
         // default
+        baseApi: '/dev',
         mockPath: 'mock',
         localEnabled: command === 'serve',
         prodEnabled: command !== 'serve' && prodMock,
