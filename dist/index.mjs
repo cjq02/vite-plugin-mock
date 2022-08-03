@@ -1,19 +1,10 @@
-var __defProp = Object.defineProperty;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-var __propIsEnum = Object.prototype.propertyIsEnumerable;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, {enumerable: true, configurable: true, writable: true, value}) : obj[key] = value;
-var __assign = (a, b) => {
-  for (var prop in b || (b = {}))
-    if (__hasOwnProp.call(b, prop))
-      __defNormalProp(a, prop, b[prop]);
-  if (__getOwnPropSymbols)
-    for (var prop of __getOwnPropSymbols(b)) {
-      if (__propIsEnum.call(b, prop))
-        __defNormalProp(a, prop, b[prop]);
-    }
-  return a;
-};
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined")
+    return require.apply(this, arguments);
+  throw new Error('Dynamic require of "' + x + '" is not supported');
+});
 
 // src/index.ts
 import path2 from "path";
@@ -50,7 +41,7 @@ function fileExists(f) {
 }
 
 // src/index.ts
-import {normalizePath} from "vite";
+import { normalizePath } from "vite";
 
 // src/createMockServer.ts
 import path from "path";
@@ -60,30 +51,30 @@ import chalk from "chalk";
 import url from "url";
 import fg from "fast-glob";
 import Mock from "mockjs";
-import {build} from "esbuild";
-import {pathToRegexp, match} from "path-to-regexp";
+import { build } from "esbuild";
+import { pathToRegexp, match } from "path-to-regexp";
 import module from "module";
 var mockData = [];
-async function createMockServer(opt = {mockPath: "mock", configPath: "vite.mock.config"}) {
-  opt = __assign({
+async function createMockServer(opt = { mockPath: "mock", configPath: "vite.mock.config" }) {
+  opt = {
     baseApi: "",
     mockPath: "mock",
     watchFiles: true,
     supportTs: true,
     configPath: "vite.mock.config.ts",
-    logger: true
-  }, opt);
+    logger: true,
+    ...opt
+  };
   if (mockData.length > 0)
     return;
   mockData = await getMockConfig(opt);
   await createWatch(opt);
 }
 async function requestMiddleware(opt) {
-  const {logger = true} = opt;
+  const { logger = true } = opt;
   const middleware = async (req, res, next) => {
     let queryParams = {};
     const baseUrl = (req.url || "").replace(opt.baseApi || "", "");
-    console.log("baseUrl", baseUrl);
     if (baseUrl) {
       queryParams = url.parse(baseUrl, true);
     }
@@ -99,11 +90,11 @@ async function requestMiddleware(opt) {
     });
     if (matchRequest) {
       const isGet = req.method && req.method.toUpperCase() === "GET";
-      const {response, rawResponse, timeout, statusCode, url: url2} = matchRequest;
+      const { response, rawResponse, timeout, statusCode, url: url2 } = matchRequest;
       if (timeout) {
         await sleep(timeout);
       }
-      const urlMatch = match(url2, {decode: decodeURIComponent});
+      const urlMatch = match(url2, { decode: decodeURIComponent });
       let query = queryParams.query;
       if (reqUrl) {
         if (isGet && JSON.stringify(query) === "{}" || !isGet) {
@@ -115,14 +106,14 @@ async function requestMiddleware(opt) {
           }
         }
       }
-      const self = {req, res, parseJson: parseJson.bind(null, req)};
+      const self = { req, res, parseJson: parseJson.bind(null, req) };
       if (isFunction(rawResponse)) {
         await rawResponse.bind(self)(req, res);
       } else {
         const body = await parseJson(req);
         res.setHeader("Content-Type", "application/json");
         res.statusCode = statusCode || 200;
-        const mockResponse = isFunction(response) ? response.bind(self)({url: req.url, body, query, headers: req.headers}) : response;
+        const mockResponse = isFunction(response) ? response.bind(self)({ url: req.url, body, query, headers: req.headers }) : response;
         res.end(JSON.stringify(Mock.mock(mockResponse)));
       }
       logger && loggerOutput("request invoke", req.url);
@@ -133,11 +124,11 @@ async function requestMiddleware(opt) {
   return middleware;
 }
 function createWatch(opt) {
-  const {configPath, logger, watchFiles} = opt;
+  const { configPath, logger, watchFiles } = opt;
   if (!watchFiles) {
     return;
   }
-  const {absConfigPath, absMockPath} = getPath(opt);
+  const { absConfigPath, absMockPath } = getPath(opt);
   if (process.env.VITE_DISABLED_WATCH_MOCK === "true") {
     return;
   }
@@ -153,13 +144,13 @@ function createWatch(opt) {
   });
 }
 function cleanRequireCache(opt) {
-  if (!require.cache) {
+  if (!__require.cache) {
     return;
   }
-  const {absConfigPath, absMockPath} = getPath(opt);
-  Object.keys(require.cache).forEach((file) => {
+  const { absConfigPath, absMockPath } = getPath(opt);
+  Object.keys(__require.cache).forEach((file) => {
     if (file === absConfigPath || file.indexOf(absMockPath) > -1) {
-      delete require.cache[file];
+      delete __require.cache[file];
     }
   });
 }
@@ -183,8 +174,8 @@ function parseJson(req) {
 }
 async function getMockConfig(opt) {
   cleanRequireCache(opt);
-  const {absConfigPath, absMockPath} = getPath(opt);
-  const {ignore, configPath, logger} = opt;
+  const { absConfigPath, absMockPath } = getPath(opt);
+  const { ignore, configPath, logger } = opt;
   let ret = [];
   if (configPath && fs2.existsSync(absConfigPath)) {
     logger && loggerOutput(`load mock data from`, absConfigPath);
@@ -237,11 +228,11 @@ async function resolveModule(p) {
     metafile: true,
     target: "es2015"
   });
-  const {text} = result.outputFiles[0];
+  const { text } = result.outputFiles[0];
   return await loadConfigFromBundledFile(p, text);
 }
 function getPath(opt) {
-  const {mockPath, configPath} = opt;
+  const { mockPath, configPath } = opt;
   const cwd = process.cwd();
   const absMockPath = path.join(cwd, mockPath || "");
   const absConfigPath = path.join(cwd, configPath || "");
@@ -252,7 +243,9 @@ function getPath(opt) {
 }
 function loggerOutput(title, msg, type = "info") {
   const tag = type === "info" ? chalk.cyan.bold(`[vite:mock]`) : chalk.red.bold(`[vite:mock-server]`);
-  return console.log(`${chalk.dim(new Date().toLocaleTimeString())} ${tag} ${chalk.green(title)} ${chalk.dim(msg)}`);
+  return console.log(
+    `${chalk.dim(new Date().toLocaleTimeString())} ${tag} ${chalk.green(title)} ${chalk.dim(msg)}`
+  );
 }
 async function loadConfigFromBundledFile(fileName, bundledCode) {
   const extension = path.extname(fileName);
@@ -276,10 +269,10 @@ async function loadConfigFromBundledFile(fileName, bundledCode) {
   };
   let config;
   try {
-    if (isJs && require && require.cache) {
-      delete require.cache[fileName];
+    if (isJs && __require && __require.cache) {
+      delete __require.cache[fileName];
     }
-    const raw = require(fileName);
+    const raw = __require(fileName);
     config = raw.__esModule ? raw.default : raw;
     if (defaultLoader && isJs) {
       extensions[extension] = defaultLoader;
@@ -310,7 +303,7 @@ function viteMockServe(opt = {}) {
     }
   }
   const defaultEnter = normalizePath(defaultPath);
-  const {injectFile = defaultEnter} = opt;
+  const { injectFile = defaultEnter } = opt;
   let isDev = false;
   let config;
   let needSourcemap = false;
@@ -323,8 +316,8 @@ function viteMockServe(opt = {}) {
       needSourcemap = !!resolvedConfig.build.sourcemap;
       isDev && createMockServer(opt);
     },
-    configureServer: async ({middlewares}) => {
-      const {localEnabled = isDev} = opt;
+    configureServer: async ({ middlewares }) => {
+      const { localEnabled = isDev } = opt;
       if (!localEnabled) {
         return;
       }
@@ -335,7 +328,7 @@ function viteMockServe(opt = {}) {
       if (isDev || !injectFile || !id.endsWith(injectFile)) {
         return null;
       }
-      const {prodEnabled = true, injectCode = ""} = opt;
+      const { prodEnabled = true, injectCode = "" } = opt;
       if (!prodEnabled) {
         return null;
       }
